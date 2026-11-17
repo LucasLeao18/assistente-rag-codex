@@ -52,16 +52,24 @@ def split_documents(docs: list[Document]) -> list[Document]:
     return chunks
 
 
-def get_vectorstore():
-    """Índice Chroma persistente com embeddings da OpenAI."""
+def get_vectorstore(embeddings=None, persist_directory: str | None = None):
+    """US03: índice Chroma persistente (sobrevive a reinício) com embeddings da OpenAI."""
     from langchain_chroma import Chroma
-    from langchain_openai import OpenAIEmbeddings
 
+    if embeddings is None:
+        from langchain_openai import OpenAIEmbeddings
+
+        embeddings = OpenAIEmbeddings(model=config.EMBEDDING_MODEL)
     return Chroma(
         collection_name=config.COLLECTION,
-        embedding_function=OpenAIEmbeddings(model=config.EMBEDDING_MODEL),
-        persist_directory=config.CHROMA_DIR,
+        embedding_function=embeddings,
+        persist_directory=persist_directory or config.CHROMA_DIR,
     )
+
+
+def search(question: str, store, k: int = config.TOP_K) -> list[Document]:
+    """US03: busca direta no índice (usada para conferir a indexação)."""
+    return store.similarity_search(question, k=k)
 
 
 def ingest_pdf(data: bytes, source: str, store=None) -> IngestResult:
