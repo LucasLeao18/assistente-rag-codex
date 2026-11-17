@@ -71,4 +71,7 @@ def answer(question: str, store, llm=None) -> Answer:
         llm = ChatOpenAI(model=config.CHAT_MODEL, temperature=0)
 
     reply = (PROMPT | llm).invoke({"context": format_context(docs), "question": question})
-    return Answer(text=ensure_citations(reply.content, docs), sources=docs)
+    text = reply.content.strip()
+    if text.startswith(config.NOT_FOUND_MESSAGE):  # US06: o modelo julgou que os trechos não bastam
+        return Answer(text=config.NOT_FOUND_MESSAGE)
+    return Answer(text=ensure_citations(text, docs), sources=docs)
