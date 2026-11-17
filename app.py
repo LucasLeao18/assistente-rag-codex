@@ -27,8 +27,18 @@ with st.sidebar:
                 with st.spinner(f"Indexando {f.name}..."):
                     r = ingest_pdf(f.getvalue(), f.name, store())
                 st.success(f"{r.source}: {r.pages} páginas, {r.chunks} trechos")
+                st.session_state.setdefault("indexed", {})[r.source] = r.page_docs
             except IngestError as exc:
                 st.error(str(exc))
+
+    if st.session_state.get("indexed"):
+        st.divider()
+        st.subheader("Texto extraído")
+        for source, pages in st.session_state.indexed.items():
+            with st.expander(f"{source} ({len(pages)} páginas)"):
+                for d in pages:
+                    st.markdown(f"**p. {d.metadata['page']}**")
+                    st.caption(d.page_content[:400] + ("…" if len(d.page_content) > 400 else ""))
 
 if "history" not in st.session_state:
     st.session_state.history = []
