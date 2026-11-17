@@ -32,6 +32,12 @@ streamlit run app.py
 pytest                       # testes
 ```
 
+Para conferir se o `.env` e a chave da OpenAI estão funcionando:
+
+```bash
+python check_api.py
+```
+
 ## Time Scrum
 
 | Integrante | Papel | Frente técnica |
