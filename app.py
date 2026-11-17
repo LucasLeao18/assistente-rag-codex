@@ -51,6 +51,8 @@ with st.sidebar:
 for msg in st.session_state.history:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
+        if msg.get("metrics"):
+            st.caption(msg["metrics"])
         if msg.get("sources"):
             show_sources(msg["sources"])
 
@@ -59,8 +61,10 @@ if question := st.chat_input("Pergunte algo sobre os documentos"):
     with st.chat_message("user"):
         st.markdown(question)
     with st.chat_message("assistant"):
-        result = answer(question, store())
+        result = answer(question, store(), log=True)
         st.markdown(result.text)
+        metrics = f"⏱ {result.seconds:.1f} s · {result.input_tokens + result.output_tokens} tokens · US$ {result.cost_usd:.4f}"
+        st.caption(metrics)
         sources = [
             {"source": d.metadata["source"], "page": d.metadata["page"],
              "score": d.metadata.get("score"), "text": d.page_content}
@@ -68,4 +72,6 @@ if question := st.chat_input("Pergunte algo sobre os documentos"):
         ]
         if sources:
             show_sources(sources)
-    st.session_state.history.append({"role": "assistant", "content": result.text, "sources": sources})
+    st.session_state.history.append(
+        {"role": "assistant", "content": result.text, "sources": sources, "metrics": metrics}
+    )

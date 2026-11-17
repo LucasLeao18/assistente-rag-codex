@@ -1,7 +1,11 @@
 """Épico B — Consulta: pergunta -> top-k trechos -> prompt -> resposta citada (US04, US05, US06)."""
 from __future__ import annotations
 
+import csv
+import time
 from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
 
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
@@ -25,6 +29,16 @@ PROMPT = ChatPromptTemplate.from_messages(
 class Answer:
     text: str
     sources: list[Document] = field(default_factory=list)
+    seconds: float = 0.0  # US09: tempo total da resposta
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+    @property
+    def cost_usd(self) -> float:
+        """US09: custo estimado da chamada ao LLM."""
+        return (
+            self.input_tokens * config.PRICE_INPUT_PER_1M + self.output_tokens * config.PRICE_OUTPUT_PER_1M
+        ) / 1_000_000
 
     @property
     def found(self) -> bool:
@@ -59,8 +73,17 @@ def ensure_citations(text: str, docs: list[Document]) -> str:
     return f"{text}\n\nFontes: {fontes}"
 
 
-def answer(question: str, store, llm=None) -> Answer:
-    """US05 + US06: gera a resposta citada ou admite que não encontrou."""
+def answer(question: str, store, llm=None, log: bool = False) -> Answer:
+    """US05 + US06 + US09: gera a resposta citada (ou admite que não encontrou), medindo tempo e tokens."""
+    start = time.perf_counter()
+    result = _answer(question, store, llm)
+    result.seconds = round(time.perf_counter() - start, 3)
+    if log:
+        log_answer(question, result)
+    return result
+
+
+def _answer(question: str, store, llm=None) -> Answer:
     docs = retrieve(question, store)
     if not docs:
         return Answer(text=config.NOT_FOUND_MESSAGE)
@@ -71,7 +94,24 @@ def answer(question: str, store, llm=None) -> Answer:
         llm = ChatOpenAI(model=config.CHAT_MODEL, temperature=0)
 
     reply = (PROMPT | llm).invoke({"context": format_context(docs), "question": question})
+    usage = getattr(reply, "usage_metadata", None) or {}
+    tokens = {"input_tokens": usage.get("input_tokens", 0), "output_tokens": usage.get("output_tokens", 0)}
     text = reply.content.strip()
     if text.startswith(config.NOT_FOUND_MESSAGE):  # US06: o modelo julgou que os trechos não bastam
-        return Answer(text=config.NOT_FOUND_MESSAGE)
-    return Answer(text=ensure_citations(text, docs), sources=docs)
+        return Answer(text=config.NOT_FOUND_MESSAGE, **tokens)
+    return Answer(text=ensure_citations(text, docs), sources=docs, **tokens)
+
+
+def log_answer(question: str, result: Answer, path: str | None = None) -> None:
+    """US09: registra tempo, tokens e custo de cada resposta em CSV."""
+    file = Path(path or config.LOG_FILE)
+    file.parent.mkdir(parents=True, exist_ok=True)
+    new = not file.exists()
+    with file.open("a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if new:
+            writer.writerow(["data_hora", "pergunta", "encontrou", "segundos", "tokens_entrada", "tokens_saida", "custo_usd"])
+        writer.writerow([
+            datetime.now().isoformat(timespec="seconds"), question, result.found, result.seconds,
+            result.input_tokens, result.output_tokens, f"{result.cost_usd:.6f}",
+        ])

@@ -6,3 +6,4 @@ venv/
 chroma_db/
 .pytest_cache/
 .DS_Store
+logs/
