@@ -33,20 +33,45 @@ with st.sidebar:
 if "history" not in st.session_state:
     st.session_state.history = []
 
+def show_sources(sources):
+    """US07: trechos usados, com arquivo, página e texto."""
+    with st.expander("Trechos usados"):
+        for d in sources:
+            score = d.get("score")
+            rel = f" · relevância {score:.2f}" if score is not None else ""
+            st.markdown(f"**{d['source']} — p. {d['page']}**{rel}")
+            st.caption(d["text"][:500] + "…")
+
+
+with st.sidebar:
+    if st.session_state.history and st.button("Limpar conversa"):
+        st.session_state.history = []
+        st.rerun()
+
 for msg in st.session_state.history:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
+        if msg.get("metrics"):
+            st.caption(msg["metrics"])
+        if msg.get("sources"):
+            show_sources(msg["sources"])
 
 if question := st.chat_input("Pergunte algo sobre os documentos"):
     st.session_state.history.append({"role": "user", "content": question})
     with st.chat_message("user"):
         st.markdown(question)
     with st.chat_message("assistant"):
-        result = answer(question, store())
+        result = answer(question, store(), log=True)
         st.markdown(result.text)
-        if result.found:
-            with st.expander("Trechos usados"):
-                for d in result.sources:
-                    st.markdown(f"**{d.metadata['source']} — p. {d.metadata['page']}**")
-                    st.caption(d.page_content[:500] + "…")
-    st.session_state.history.append({"role": "assistant", "content": result.text})
+        metrics = f"⏱ {result.seconds:.1f} s · {result.input_tokens + result.output_tokens} tokens · US$ {result.cost_usd:.4f}"
+        st.caption(metrics)
+        sources = [
+            {"source": d.metadata["source"], "page": d.metadata["page"],
+             "score": d.metadata.get("score"), "text": d.page_content}
+            for d in result.sources
+        ]
+        if sources:
+            show_sources(sources)
+    st.session_state.history.append(
+        {"role": "assistant", "content": result.text, "sources": sources, "metrics": metrics}
+    )

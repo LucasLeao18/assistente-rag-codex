@@ -18,3 +18,8 @@ TOP_K = int(os.getenv("TOP_K", "4"))
 MIN_RELEVANCE = float(os.getenv("MIN_RELEVANCE", "0.30"))  # US06: limiar do "não encontrei"
 
 NOT_FOUND_MESSAGE = "Não encontrei essa informação nos documentos enviados."
+
+# US09: preço estimado por 1 milhão de tokens (US$), configurável conforme a tabela da OpenAI
+PRICE_INPUT_PER_1M = float(os.getenv("PRICE_INPUT_PER_1M", "0.15"))
+PRICE_OUTPUT_PER_1M = float(os.getenv("PRICE_OUTPUT_PER_1M", "0.60"))
+LOG_FILE = os.getenv("LOG_FILE", "logs/respostas.csv")

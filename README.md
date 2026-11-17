@@ -72,6 +72,23 @@ pytest                       # testes
 
 **Cerimônias:** Planning (quarta, 30 min) · Daily assíncrona (seg/qua/sex) · Refinamento (segunda) · Review (terça, em aula) · Retro (terça, 15 min).
 
+## Avaliação (US08)
+
+20 perguntas com gabarito em `eval/perguntas.csv` (16 com resposta e 4 sem resposta nos documentos), sobre o guia do projeto em `eval/docs/`. Métricas:
+
+- **Recuperação:** a página do gabarito está entre os 4 trechos recuperados
+- **Citação correta:** a resposta cita `[arquivo, p. N]` do gabarito
+- **Fidelidade:** responde quando há evidência e diz "Não encontrei…" quando não há
+
+```bash
+python avaliar.py   # precisa da OPENAI_API_KEY; grava eval/resultado.md e atualiza a seção abaixo
+```
+
+**Resultado:**
+<!-- avaliacao:inicio -->
+_Ainda não executado com a chave da equipe._
+<!-- avaliacao:fim -->
+
 ## Definition of Done
 
 - [ ] Critérios de aceite da issue atendidos

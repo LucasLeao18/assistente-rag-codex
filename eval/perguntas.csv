@@ -1,0 +1,21 @@
+id,pergunta,arquivo,pagina,resposta_esperada
+1,Qual é o objetivo do projeto?,guia_projeto.pdf,1,Assistente que responde perguntas sobre PDFs citando arquivo e página
+2,Qual ferramenta é usada para a interface?,guia_projeto.pdf,1,Streamlit
+3,O código gerado pelo Codex pode entrar sem revisão?,guia_projeto.pdf,1,Não; sempre com revisão humana antes do merge
+4,Quem é o Product Owner do grupo?,guia_projeto.pdf,2,Lucas Leão
+5,Quem é o Scrum Master?,guia_projeto.pdf,2,Vinícios Menezes
+6,Quem cuida da ingestão dos documentos?,guia_projeto.pdf,2,Marcelo Barbosa
+7,Quem desenvolve o retriever e o prompt?,guia_projeto.pdf,2,Ruan Galvão
+8,Em que dia da semana acontecem as reviews?,guia_projeto.pdf,3,Terça
+9,Quando é o seminário Scrum?,guia_projeto.pdf,3,27/11
+10,Quando é a live demo da II Unidade?,guia_projeto.pdf,3,08/12
+11,Qual é a data do code freeze?,guia_projeto.pdf,3,05/12
+12,Qual o tamanho dos trechos usados no chunking?,guia_projeto.pdf,4,Cerca de 650 tokens com sobreposição de 120
+13,Qual modelo de embeddings é usado?,guia_projeto.pdf,4,text-embedding-3-small
+14,Quantos trechos são recuperados por pergunta?,guia_projeto.pdf,4,4
+15,O que acontece quando nenhum trecho é relevante?,guia_projeto.pdf,4,O sistema responde que não encontrou a informação
+16,Como deve ser o nome da branch de uma história?,guia_projeto.pdf,5,usXX-descricao
+17,Qual é a nota mínima para aprovação na disciplina?,,,SEM_RESPOSTA
+18,Quem é o professor da disciplina?,,,SEM_RESPOSTA
+19,Em qual nuvem o sistema será publicado?,,,SEM_RESPOSTA
+20,Quantas horas por semana cada integrante deve dedicar?,,,SEM_RESPOSTA
