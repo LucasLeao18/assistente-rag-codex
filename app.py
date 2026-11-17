@@ -47,6 +47,8 @@ if question := st.chat_input("Pergunte algo sobre os documentos"):
         if result.found:
             with st.expander("Trechos usados"):
                 for d in result.sources:
-                    st.markdown(f"**{d.metadata['source']} — p. {d.metadata['page']}**")
+                    score = d.metadata.get("score")
+                    rel = f" · relevância {score:.2f}" if score is not None else ""
+                    st.markdown(f"**{d.metadata['source']} — p. {d.metadata['page']}**{rel}")
                     st.caption(d.page_content[:500] + "…")
     st.session_state.history.append({"role": "assistant", "content": result.text})
