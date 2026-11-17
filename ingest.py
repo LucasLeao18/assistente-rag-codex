@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import io
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -21,10 +21,13 @@ class IngestResult:
     source: str
     pages: int
     chunks: int
+    page_docs: list[Document] = field(default_factory=list)  # texto por página (prévia na interface)
 
 
 def extract_pages(data: bytes, source: str) -> list[Document]:
     """US02: extrai o texto de cada página preservando arquivo e número da página."""
+    if not source.lower().endswith(".pdf"):
+        raise IngestError(f"'{source}' não é um PDF. Envie apenas arquivos .pdf.")
     try:
         reader = PdfReader(io.BytesIO(data))
     except (PdfReadError, ValueError, OSError) as exc:
@@ -70,4 +73,4 @@ def ingest_pdf(data: bytes, source: str, store=None) -> IngestResult:
     chunks = split_documents(pages)
     store = store or get_vectorstore()
     store.add_documents(chunks, ids=[c.metadata["chunk_id"] for c in chunks])
-    return IngestResult(source=source, pages=len(pages), chunks=len(chunks))
+    return IngestResult(source=source, pages=len(pages), chunks=len(chunks), page_docs=pages)
