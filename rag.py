@@ -32,15 +32,31 @@ class Answer:
 
 
 def format_context(docs: list[Document]) -> str:
-    return "\n\n".join(
-        f"[{d.metadata['source']}, p. {d.metadata['page']}]\n{d.page_content}" for d in docs
-    )
+    return "\n\n".join(f"{citation(d)}\n{d.page_content}" for d in docs)
 
 
-def retrieve(question: str, store) -> list[Document]:
-    """US04: busca os TOP_K trechos e descarta os pouco relevantes (US06)."""
-    results = store.similarity_search_with_relevance_scores(question, k=config.TOP_K)
-    return [doc for doc, score in results if score >= config.MIN_RELEVANCE]
+def retrieve(question: str, store, k: int | None = None) -> list[Document]:
+    """US04: busca os top-k (padrão 4) trechos, guarda o score e descarta os pouco relevantes (US06)."""
+    results = store.similarity_search_with_relevance_scores(question, k=k or config.TOP_K)
+    docs = []
+    for doc, score in sorted(results, key=lambda r: r[1], reverse=True):
+        if score >= config.MIN_RELEVANCE:
+            doc.metadata["score"] = round(float(score), 3)
+            docs.append(doc)
+    return docs
+
+
+def citation(doc: Document) -> str:
+    """US05: formato padrão de citação."""
+    return f"[{doc.metadata['source']}, p. {doc.metadata['page']}]"
+
+
+def ensure_citations(text: str, docs: list[Document]) -> str:
+    """US05: se o modelo não citou nenhuma fonte recuperada, acrescenta as fontes usadas."""
+    if any(citation(d) in text for d in docs):
+        return text
+    fontes = ", ".join(dict.fromkeys(citation(d) for d in docs))
+    return f"{text}\n\nFontes: {fontes}"
 
 
 def answer(question: str, store, llm=None) -> Answer:
@@ -55,4 +71,7 @@ def answer(question: str, store, llm=None) -> Answer:
         llm = ChatOpenAI(model=config.CHAT_MODEL, temperature=0)
 
     reply = (PROMPT | llm).invoke({"context": format_context(docs), "question": question})
-    return Answer(text=reply.content, sources=docs)
+    text = reply.content.strip()
+    if text.startswith(config.NOT_FOUND_MESSAGE):  # US06: o modelo julgou que os trechos não bastam
+        return Answer(text=config.NOT_FOUND_MESSAGE)
+    return Answer(text=ensure_citations(text, docs), sources=docs)
